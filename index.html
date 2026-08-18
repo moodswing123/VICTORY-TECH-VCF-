@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victory Tech - Multi VCF Generator</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #0a0a0a;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: #111;
+            border: 2px solid #00ff41;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 950px;
+            width: 100%;
+            box-shadow: 0 0 50px rgba(0,255,65,0.15);
+        }
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px #00ff41;
+            margin-bottom: 5px;
+        }
+        .sub {
+            text-align: center;
+            color: #00cc33;
+            font-size: 13px;
+            margin-bottom: 25px;
+            opacity: 0.7;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #00ff41;
+            font-size: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .stats span { color: #66ff88; font-weight: bold; }
+        .stats .db-count { color: #ffaa00; font-weight: bold; }
+        .contact-entry {
+            background: #1a1a1a;
+            border: 1px solid #00ff41;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .contact-entry input {
+            flex: 1;
+            min-width: 120px;
+            padding: 8px 12px;
+            background: #0a0a0a;
+            border: 1px solid #00ff41;
+            border-radius: 4px;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            outline: none;
+        }
+        .contact-entry input:focus {
+            box-shadow: 0 0 15px rgba(0,255,65,0.2);
+        }
+        .contact-entry .remove-btn {
+            background: transparent;
+            border: 1px solid #ff0040;
+            color: #ff0040;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+        .contact-entry .remove-btn:hover {
+            background: #ff0040;
+            color: #0a0a0a;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .actions button {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px;
+            background: transparent;
+            border: 2px solid #00ff41;
+            border-radius: 6px;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .actions button:hover {
+            background: #00ff41;
+            color: #0a0a0a;
+        }
+        .actions button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .actions button.danger {
+            border-color: #ff0040;
+            color: #ff0040;
+        }
+        .actions button.danger:hover {
+            background: #ff0040;
+            color: #0a0a0a;
+        }
+        .actions button.push-btn {
+            border-color: #ffaa00;
+            color: #ffaa00;
+        }
+        .actions button.push-btn:hover {
+            background: #ffaa00;
+            color: #0a0a0a;
+        }
+        .actions button.refresh-db-btn {
+            border-color: #6666ff;
+            color: #6666ff;
+        }
+        .actions button.refresh-db-btn:hover {
+            background: #6666ff;
+            color: #0a0a0a;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #1a1a1a;
+            border: 1px solid #00ff41;
+            border-radius: 6px;
+            margin: 15px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #00ff41;
+            transition: width 0.5s;
+            width: 0%;
+            box-shadow: 0 0 20px rgba(0,255,65,0.3);
+        }
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            font-weight: bold;
+            color: #0a0a0a;
+            text-shadow: 0 0 10px #00ff41;
+        }
+        .preview {
+            margin-top: 20px;
+            padding: 14px;
+            background: #0d0d0d;
+            border: 1px dashed #00ff41;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 250px;
+            overflow-y: auto;
+            display: none;
+        }
+        .preview.show { display: block; }
+        .footer {
+            margin-top: 20px;
+            font-size: 11px;
+            text-align: center;
+            opacity: 0.4;
+            letter-spacing: 1px;
+        }
+        .lock-icon { color: #ff0040; font-size: 18px; }
+        .unlock-icon { color: #00ff41; font-size: 18px; }
+        .status-msg {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+            text-align: center;
+        }
+        .status-msg.success { 
+            background: #003300; 
+            border: 1px solid #00ff41;
+            display: block;
+        }
+        .status-msg.error { 
+            background: #330000; 
+            border: 1px solid #ff0040;
+            display: block;
+            color: #ff6666;
+        }
+        .status-msg.info { 
+            background: #001133; 
+            border: 1px solid #0066ff;
+            display: block;
+            color: #66aaff;
+        }
+        .db-status {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 5px;
+        }
+        .total-db-display {
+            background: #1a1a1a;
+            border: 1px solid #ffaa00;
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 16px;
+            color: #ffaa00;
+        }
+        .total-db-display span { color: #66ff88; font-size: 22px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⬡ VICTORY TECH VCF</h1>
+    <div class="sub">💀 Global database — 500 contacts required to unlock 💀</div>
+
+    <div class="stats">
+        <div>📊 Local Contacts: <span id="contactCount">0</span></div>
+        <div>🌐 Database Total: <span id="dbTotalCount" class="db-count">0</span></div>
+        <div>🔒 Status: <span id="statusText" class="lock-icon">🔒 LOCKED</span></div>
+    </div>
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="total-db-display">
+        📦 DATABASE CONTACTS: <span id="dbTotalDisplay">0</span> / 500
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-text" id="progressText">0%</div>
+    </div>
+
+    <div id="contactsContainer">
+        <div style="text-align:center; padding:30px; opacity:0.5; border:1px dashed #00ff41; border-radius:8px;">
+            No contacts locally. Click "ADD CONTACT" to start building.<br>
+            Need 500 total in database to unlock download.
+        </div>
+    </div>
+
+    <div class="actions">
+        <button id="addContactBtn">➕ ADD CONTACT</button>
+        <button id="downloadBtn" disabled>⬇ DOWNLOAD VCF (LOCKED)</button>
+        <button id="clearBtn" class="danger">🗑 CLEAR ALL</button>
+        <button id="pushBtn" class="push-btn">📤 PUSH TO DATABASE</button>
+        <button id="refreshDbBtn" class="refresh-db-btn">🔄 REFRESH DB COUNT</button>
+    </div>
+
+    <div class="preview" id="preview"></div>
+    <div class="footer">🔻 Contacts stored locally. Push to database to save globally. DB count updates on push.</div>
+</div>
+
+<script>
+// ============================================================
+// VICTORY TECH - LOCAL + DATABASE WITH LIVE COUNT
+// FIXED: Add Contact button now works
+// ============================================================
+
+const BIN_ID = '6a844f26da38895dfef2a19c';
+const API_KEY = '$2a$10$gJCF2Mb.77rKvpyh3UnBvOGondXhWIM9VVAw8tYpurfOP7smuUBTW';
+
+let contacts = [];
+let dbTotalContacts = 0;
+let isLoading = false;
+
+// Show status message
+function showStatus(message, type = 'info') {
+    const el = document.getElementById('statusMsg');
+    el.textContent = message;
+    el.className = 'status-msg ' + type;
+    el.style.display = 'block';
+    setTimeout(() => {
+        if (el.className === 'status-msg ' + type) {
+            el.style.display = 'none';
+        }
+    }, 5000);
+}
+
+// Fetch database count only (does NOT load contacts)
+async function fetchDatabaseCount() {
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            headers: {
+                'X-Master-Key': API_KEY
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const dbData = data.record || [];
+            dbTotalContacts = dbData.length;
+            updateDbDisplay();
+            return dbTotalContacts;
+        } else {
+            throw new Error(`Fetch failed: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error fetching DB count:', error);
+        document.getElementById('dbTotalCount').textContent = '⚠️';
+        document.getElementById('dbTotalDisplay').textContent = '⚠️';
+        return 0;
+    }
+}
+
+// Update database count display
+function updateDbDisplay() {
+    document.getElementById('dbTotalCount').textContent = dbTotalContacts;
+    document.getElementById('dbTotalDisplay').textContent = dbTotalContacts;
+    
+    // Check if database has 500+ contacts
+    const isDbUnlocked = dbTotalContacts >= 500;
+    const statusText = document.getElementById('statusText');
+    const downloadBtn = document.getElementById('downloadBtn');
+    
+    if (isDbUnlocked) {
+        statusText.innerHTML = '<span class="unlock-icon">🔓 UNLOCKED</span>';
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = '⬇ DOWNLOAD VCF (UNLOCKED)';
+    } else {
+        statusText.innerHTML = `<span class="lock-icon">🔒 LOCKED (${dbTotalContacts}/500)</span>`;
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = `⬇ DOWNLOAD VCF (${dbTotalContacts}/500)`;
+    }
+    
+    // Update progress bar based on database total
+    const progress = Math.min((dbTotalContacts / 500) * 100, 100);
+    document.getElementById('progressFill').style.width = progress + '%';
+    document.getElementById('progressText').textContent = Math.round(progress) + '%';
+}
+
+// Load from localStorage only
+function loadLocalContacts() {
+    const saved = localStorage.getItem('victoryTechContacts');
+    contacts = saved ? JSON.parse(saved) : [];
+    renderContacts();
+    document.getElementById('contactCount').textContent = contacts.length;
+    if (contacts.length > 0) {
+        showStatus(`📂 Loaded ${contacts.length} contacts from local storage`, 'info');
+    }
+}
+
+// Push contacts to database and update count
+async function pushToDatabase() {
+    if (contacts.length === 0) {
+        showStatus('❌ No contacts to push', 'error');
+        return;
+    }
+    
+    document.getElementById('dbTotalCount').textContent = '⏳';
+    document.getElementById('dbTotalDisplay').textContent = '⏳';
+    showStatus('⏳ Pushing contacts to database...', 'info');
+    
+    try {
+        // First, get existing database data
+        const getResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            headers: {
+                'X-Master-Key': API_KEY
+            }
+        });
+        
+        let existingData = [];
+        if (getResponse.ok) {
+            const data = await getResponse.json();
+            existingData = data.record || [];
+        }
+        
+        // Merge: Add local contacts that don't already exist (by phone number)
+        const merged = [...existingData];
+        let addedCount = 0;
+        
+        contacts.forEach(localContact => {
+            const exists = merged.some(existing => 
+                existing.phone === localContact.phone && existing.name === localContact.name
+            );
+            if (!exists) {
+                merged.push(localContact);
+                addedCount++;
+            }
+        });
+        
+        if (addedCount === 0) {
+            showStatus('ℹ️ No new contacts to add (all already in database)', 'info');
+            dbTotalContacts = merged.length;
+            updateDbDisplay();
+            return;
+        }
+        
+        // Push merged data back to database
+        const putResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_KEY
+            },
+            body: JSON.stringify(merged)
+        });
+        
+        if (putResponse.ok) {
+            dbTotalContacts = merged.length;
+            updateDbDisplay();
+            showStatus(`✅ Successfully added ${addedCount} new contacts! Database now has ${dbTotalContacts} contacts.`, 'success');
+            
+            // Clear local contacts after successful push
+            if (confirm(`✅ ${addedCount} contacts pushed! Database total: ${dbTotalContacts}/500\n\nClear your local list now?`)) {
+                contacts = [];
+                localStorage.setItem('victoryTechContacts', JSON.stringify(contacts));
+                renderContacts();
+                document.getElementById('contactCount').textContent = '0';
+                showStatus(`🗑 Local list cleared. Database has ${dbTotalContacts} contacts.`, 'info');
+            }
+        } else {
+            throw new Error(`Push failed: ${putResponse.status}`);
+        }
+    } catch (error) {
+        console.error('Push error:', error);
+        document.getElementById('dbTotalCount').textContent = '❌';
+        document.getElementById('dbTotalDisplay').textContent = '❌';
+        showStatus('❌ Failed to push to database. Check API key and bin ID.', 'error');
+    }
+}
+
+// Add a new contact locally - FIXED
+function addContact(name = '', phone = '') {
+    contacts.push({ name, phone });
+    localStorage.setItem('victoryTechContacts', JSON.stringify(contacts));
+    renderContacts();
+    document.getElementById('contactCount').textContent = contacts.length;
+    showStatus(`✅ Added contact (${contacts.length} local)`, 'success');
+    // Scroll to bottom to show new contact
+    const container = document.getElementById('contactsContainer');
+    setTimeout(() => {
+        container.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+}
+
+// Remove a contact locally
+function removeContact(index) {
+    contacts.splice(index, 1);
+    localStorage.setItem('victoryTechContacts', JSON.stringify(contacts));
+    renderContacts();
+    document.getElementById('contactCount').textContent = contacts.length;
+    showStatus(`🗑 Removed contact (${contacts.length} local)`, 'info');
+}
+
+// Clear all local contacts
+function clearAll() {
+    if (contacts.length === 0) return;
+    if (confirm('⚠️ Delete ALL local contacts? This does NOT affect the database.')) {
+        contacts = [];
+        localStorage.setItem('victoryTechContacts', JSON.stringify(contacts));
+        renderContacts();
+        document.getElementById('contactCount').textContent = '0';
+        showStatus('🗑 All local contacts deleted', 'error');
+    }
+}
+
+// Render contacts
+function renderContacts() {
+    const container = document.getElementById('contactsContainer');
+    if (contacts.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:30px; opacity:0.5; border:1px dashed #00ff41; border-radius:8px;">
+                No contacts locally. Click "ADD CONTACT" to start building.<br>
+                Database has <strong style="color:#ffaa00;">${dbTotalContacts}</strong> contacts total.
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    contacts.forEach((contact, index) => {
+        const name = contact.name || '';
+        const phone = contact.phone || '';
+        html += `
+            <div class="contact-entry">
+                <input type="text" placeholder="Full Name" value="${escapeHtml(name)}" 
+                       onchange="updateContact(${index}, 'name', this.value)">
+                <input type="text" placeholder="Phone Number" value="${escapeHtml(phone)}" 
+                       onchange="updateContact(${index}, 'phone', this.value)">
+                <button class="remove-btn" onclick="removeContact(${index})">✕</button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function updateContact(index, field, value) {
+    if (index >= 0 && index < contacts.length) {
+        contacts[index][field] = value;
+        localStorage.setItem('victoryTechContacts', JSON.stringify(contacts));
+        document.getElementById('contactCount').textContent = contacts.length;
+    }
+}
+
+function generateVCF() {
+    if (dbTotalContacts < 500) {
+        alert(`❌ Database needs ${500 - dbTotalContacts} more contacts to unlock.`);
+        return;
+    }
+
+    // Fetch full database to generate VCF
+    showStatus('⏳ Fetching database contacts for VCF...', 'info');
+    
+    fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        headers: { 'X-Master-Key': API_KEY }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const allContacts = data.record || [];
+        if (allContacts.length < 500) {
+            showStatus(`❌ Database has ${allContacts.length} contacts, need 500`, 'error');
+            return;
+        }
+        
+        let vcf = '';
+        allContacts.forEach(contact => {
+            const name = contact.name.trim() || 'Unknown';
+            const phone = contact.phone.trim() || '+0000000000';
+            
+            vcf += 'BEGIN:VCARD\n';
+            vcf += 'VERSION:3.0\n';
+            vcf += `FN:${name}\n`;
+            vcf += `N:${name.split(' ').reverse().join(';')};;;\n`;
+            vcf += `TEL;TYPE=CELL:${phone}\n`;
+            vcf += 'END:VCARD\n';
+        });
+        
+        const preview = document.getElementById('preview');
+        preview.textContent = vcf;
+        preview.classList.add('show');
+        
+        const blob = new Blob([vcf], { type: 'text/vcard;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `VICTORY_TECH_${allContacts.length}_CONTACTS.vcf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        
+        showStatus(`✅ VCF downloaded with ${allContacts.length} contacts!`, 'success');
+    })
+    .catch(error => {
+        console.error('Download error:', error);
+        showStatus('❌ Failed to fetch database for VCF', 'error');
+    });
+}
+
+// ============================================================
+// EVENT LISTENERS - FIXED
+// ============================================================
+document.addEventListener('DOMContentLoaded', async function() {
+    // Load local contacts
+    loadLocalContacts();
+    
+    // Fetch database count
+    await fetchDatabaseCount();
+    updateDbDisplay();
+    
+    // ADD CONTACT BUTTON - FIXED
+    document.getElementById('addContactBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        addContact('', '');
+    });
+    
+    // DOWNLOAD BUTTON
+    document.getElementById('downloadBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        generateVCF();
+    });
+    
+    // CLEAR ALL BUTTON
+    document.getElementById('clearBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        clearAll();
+    });
+    
+    // PUSH TO DATABASE BUTTON
+    document.getElementById('pushBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        pushToDatabase();
+    });
+    
+    // REFRESH DB COUNT BUTTON
+    document.getElementById('refreshDbBtn').addEventListener('click', async function(e) {
+        e.preventDefault();
+        await fetchDatabaseCount();
+        updateDbDisplay();
+        showStatus(`🔄 Database count refreshed: ${dbTotalContacts} contacts`, 'info');
+    });
+    
+    // Keyboard shortcut: Ctrl+Enter to add contact
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            addContact('', '');
+        }
+    });
+    
+    console.log('✅ Victory Tech VCF Generator loaded');
+    console.log(`📊 Local contacts: ${contacts.length}`);
+    console.log(`🌐 Database contacts: ${dbTotalContacts}`);
+});
+</script>
+</body>
+</html>
+```
